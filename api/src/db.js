@@ -84,6 +84,60 @@ function initDb() {
       FOREIGN KEY (organizerId) REFERENCES users(id)
     )`);
 
+    // Posts Table
+    db.run(`
+    CREATE TABLE IF NOT EXISTS posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId TEXT NOT NULL,
+      content TEXT NOT NULL,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(userId) REFERENCES users(id)
+    )
+  `);
+
+  // Default Events (with rsvps column added)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS events_new (
+      id TEXT PRIMARY KEY,
+      organizerId TEXT NOT NULL,
+      organizerName TEXT NOT NULL,
+      title TEXT NOT NULL,
+      date TEXT NOT NULL,
+      time TEXT NOT NULL,
+      location TEXT NOT NULL,
+      rules TEXT NOT NULL,
+      rsvps TEXT DEFAULT '[]',
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (organizerId) REFERENCES users(id)
+    )
+  `);
+
+  db.run(`
+    INSERT OR IGNORE INTO events_new (id, organizerId, organizerName, title, date, time, location, rules, rsvps, createdAt)
+    SELECT id, organizerId, organizerName, title, date, time, location, rules, '[]', createdAt FROM events;
+  `);
+
+  db.run(`DROP TABLE IF EXISTS events;`);
+  db.run(`ALTER TABLE events_new RENAME TO events;`);
+
+  // Default Events (inserting example data)
+  db.run(`
+    INSERT OR IGNORE INTO events (id, organizerId, organizerName, title, date, time, location, rules, rsvps)
+    VALUES ('1', '1', 'Admin', 'Trackday Noturno', '2024-12-15', '20:00', 'Interlagos', 'Capacete obrigatório. Proibido drift.', '["1"]')
+  `);
+  
+  // Custom mock data for posts
+  db.get("SELECT COUNT(*) as count FROM posts", (err, row) => {
+    if (row.count === 0) {
+      db.run(`
+        INSERT INTO posts (userId, content) VALUES
+        ('1', 'Ansioso para o trackday deste final de semana!'),
+        ('1', 'Alguém recomenda uma boa oficina especializada em suspensão na zona sul?'),
+        ('1', 'Instalei os pneus slick, a diferença de grip é absurda! 🔥')
+      `);
+    }
+  });
+
     console.log('Database tables verified/created successfully.');
   });
 }

@@ -178,9 +178,6 @@ export default function Profile() {
                   <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={saving}>
                     {saving ? 'PROCESSANDO...' : 'ATUALIZAR DADOS'}
                   </button>
-                  <button type="button" onClick={logout} className="btn-primary" style={{ background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', width: 'auto' }}>
-                    <LogOut size={18} />
-                  </button>
                 </div>
                 {notification && <div className="animate-in" style={{ color: 'var(--success)', marginTop: '1rem', fontWeight: '800', fontSize: '0.8rem' }}>✓ {notification}</div>}
               </form>

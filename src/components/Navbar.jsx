@@ -1,10 +1,11 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { CarFront, Trophy, Calendar, User, LogOut } from 'lucide-react';
+import { CarFront, Trophy, Calendar, User, LogOut, MessageSquare, LayoutGrid, Timer } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   return (
     <nav className="top-nav">
@@ -16,28 +17,28 @@ export default function Navbar() {
 
         <div className="nav-links">
           <NavLink to="/garage" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Garagem
+            <LayoutGrid size={16} /> GARAGEM
           </NavLink>
           <NavLink to="/laptimes" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Tempos de Volta
+            <Timer size={16} /> TELEMETRIA
           </NavLink>
           <NavLink to="/ranking" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Ranking
+            <Trophy size={16} /> RANKING
           </NavLink>
           <NavLink to="/events" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            Eventos
+            <Calendar size={16} /> EVENTOS
           </NavLink>
-          
+          <NavLink to="/feed" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <MessageSquare size={16} /> PADDOCK
+          </NavLink>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.5rem' }} />
           
           <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <User size={18} />
             {user?.name || 'Perfil'}
           </NavLink>
-          
-          <button onClick={logout} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', hover: { color: 'var(--danger)' } }}>
-            <LogOut size={18} />
-          </button>
         </div>
       </div>
     </nav>

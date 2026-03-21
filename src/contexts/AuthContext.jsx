@@ -15,6 +15,15 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem('pilot_user_data');
     if (storedUser && token) {
       setUser(JSON.parse(storedUser));
+    } else {
+      // DEFAULT GUEST PILOT (ID 1 as defined in the API)
+      setUser({
+        id: '1',
+        name: 'Piloto Visitante',
+        email: 'guest@racing.com',
+        cnhStatus: 'Definitiva',
+        avatarUrl: null
+      });
     }
     setLoading(false);
   }, [token]);

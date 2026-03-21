@@ -168,6 +168,40 @@ app.delete('/api/laps/:id', authMiddleware, (req, res) => {
   });
 });
 
+// --- POSTS (Feed) ENDPOINTS ---
+
+// Get all posts for the community feed with user info and primary car
+app.get('/api/posts', authMiddleware, (req, res) => {
+  const query = `
+    SELECT 
+      p.*, 
+      u.name as userName,
+      (SELECT GROUP_CONCAT(c.marca || ' ' || c.modelo, ' / ') FROM cars c WHERE c.userId = p.userId LIMIT 1) as mainCar
+    FROM posts p
+    JOIN users u ON p.userId = u.id
+    ORDER BY p.createdAt DESC
+  `;
+  db.all(query, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Create a new post
+app.post('/api/posts', authMiddleware, (req, res) => {
+  const { content } = req.body;
+  if (!content) return res.status(400).json({ error: 'Conteúdo é obrigatório' });
+
+  db.run(
+    'INSERT INTO posts (userId, content) VALUES (?, ?)',
+    [req.user.id, content],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID, userId: req.user.id, content, createdAt: new Date() });
+    }
+  );
+});
+
 // --- Events Routes ---
 app.get('/api/events', authMiddleware, (req, res) => {
   db.all('SELECT * FROM events ORDER BY date ASC, time ASC', [], (err, events) => {
