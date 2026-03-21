@@ -1,0 +1,349 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&display=swap');
+
+:root {
+  /* Color Palette - Deeper and more technical */
+  --bg-primary: #0a0b0d; 
+  --bg-secondary: #13151a;
+  --bg-tertiary: #1c1f26;
+  --bg-panel: rgba(255, 255, 255, 0.02);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-glow: rgba(243, 18, 96, 0.3);
+  
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #52525b;
+
+  --accent-primary: #f31260; 
+  --accent-hover: #e0115a;
+  --accent-soft: rgba(243, 18, 96, 0.1);
+  
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  --font-main: 'Outfit', sans-serif;
+  --font-tech: 'JetBrains Mono', monospace;
+  
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --max-width: 1600px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-primary);
+  /* Technical Grid + Asphal/Carbon texture + Watermark */
+  background-image: 
+    linear-gradient(rgba(243, 18, 96, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(243, 18, 96, 0.05) 1px, transparent 1px),
+    radial-gradient(at 0% 0%, rgba(243, 18, 96, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(243, 18, 96, 0.03) 0px, transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3%3C/filter%3%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3%3C/svg%3");
+  background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%, auto;
+  background-blend-mode: overlay, overlay, soft-light, soft-light, soft-light;
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+body::before {
+  content: "RACING MANAGER";
+  position: fixed;
+  bottom: -50px;
+  right: -20px;
+  font-size: 15rem;
+  font-family: var(--font-tech);
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.015);
+  z-index: -1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem;
+  padding-top: 100px;
+  flex: 1;
+}
+
+/* Fixed Top Navbar */
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: rgba(10, 11, 13, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-content {
+  width: 100%;
+  max-width: var(--max-width);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #fff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  letter-spacing: -0.02em;
+  font-family: var(--font-tech);
+}
+
+.logo span {
+  color: var(--accent-primary);
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+}
+
+.nav-link:hover, .nav-link.active {
+  color: #fff;
+}
+
+.nav-link.active {
+  background: var(--accent-soft);
+  color: var(--accent-primary);
+}
+
+/* Premium Component: Cards */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.card:hover {
+  border-color: var(--border-glow);
+  transform: translateY(-4px);
+  box-shadow: 0 15px 40px rgba(243, 18, 96, 0.1);
+}
+
+/* Hero & Section Typography */
+.hero-title {
+  font-family: var(--font-tech);
+  font-size: 3.5rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+.hero-title span {
+  color: var(--accent-primary);
+  text-shadow: 0 0 20px rgba(243, 18, 96, 0.4);
+}
+
+.title {
+  font-family: var(--font-tech);
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Form Elements */
+.label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.1em;
+}
+
+.input, .select, select {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1.25rem;
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  font-weight: 500;
+  outline: none;
+  transition: var(--transition);
+}
+
+.input:focus, .select:focus {
+  border-color: var(--accent-primary);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 4px rgba(243, 18, 96, 0.1);
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 1rem 2rem;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-family: var(--font-tech);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.2);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(243, 18, 96, 0.4);
+}
+
+/* Specific Grid Layouts */
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Ranking Specific Styles */
+.ranking-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.ranking-table th {
+  text-align: left;
+  padding: 0.5rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.ranking-row {
+  background: rgba(255, 255, 255, 0.02);
+  transition: var(--transition);
+}
+
+.ranking-row:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(4px);
+}
+
+.ranking-row td {
+  padding: 1rem;
+}
+
+.ranking-row td:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.ranking-row td:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Empty States */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  text-align: center;
+  background: var(--bg-panel);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+/* Car Card Details */
+.car-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.car-stat-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.car-stat-value {
+  font-family: var(--font-tech);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
