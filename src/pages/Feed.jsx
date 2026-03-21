@@ -60,7 +60,7 @@ export default function Feed() {
   };
 
   return (
-    <div className="page-container">
+    <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
         <div>
           <h1 className="hero-title">NO <span>PADDOCK</span></h1>
@@ -164,6 +164,6 @@ export default function Feed() {
         </div>
 
       </div>
-    </div>
+    </>
   );
 }

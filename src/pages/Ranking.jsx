@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '../components/Navbar';
 import { useLapTimes } from '../hooks/useLapTimes';
 import { Trophy, Zap, Filter, MapPin, Search } from 'lucide-react';
 
@@ -35,9 +34,7 @@ export default function Ranking() {
     : lapTimes.filter(l => l.track === filterTrack);
 
   return (
-    <div className="page-container">
-      <Navbar />
-
+    <>
       <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
         <h1 className="hero-title">RANKING <span>MUNDIAL</span></h1>
         <p className="subtitle">Status de elite: Os tempos mais baixos por categoria técnica.</p>
@@ -132,6 +129,6 @@ export default function Ranking() {
           <p className="subtitle">Seja o primeiro a registrar um tempo para inaugurar o ranking mundial.</p>
         </div>
       )}
-    </div>
+    </>
   );
 }

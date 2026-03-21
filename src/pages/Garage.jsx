@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '../components/Navbar';
 import { useGarage } from '../hooks/useGarage';
 import { Plus, Trash2, CarFront, Zap, Gauge, Weight, Calendar as CalendarIcon, Disc } from 'lucide-react';
 
@@ -36,9 +35,7 @@ export default function Garage() {
   };
 
   return (
-    <div className="page-container">
-      <Navbar />
-
+    <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
         <div>
           <h1 className="hero-title">MINHA <span>GARAGEM</span></h1>
@@ -194,6 +191,6 @@ export default function Garage() {
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }

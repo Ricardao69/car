@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '../components/Navbar';
 import { useGarage } from '../hooks/useGarage';
 import { useLapTimes } from '../hooks/useLapTimes';
 import { Timer, MapPin, Plus, History, Trash2, CloudRain, Sun, Cloud, Calendar, Info } from 'lucide-react';
@@ -50,9 +49,7 @@ export default function LapTimes() {
   };
 
   return (
-    <div className="page-container">
-      <Navbar />
-
+    <>
       <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
         <h1 className="hero-title">REGISTRAR <span>TEMPO</span></h1>
         <p className="subtitle">Documente sua performance com precisão técnica.</p>
@@ -178,6 +175,6 @@ export default function LapTimes() {
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

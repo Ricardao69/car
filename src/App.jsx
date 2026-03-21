@@ -1,6 +1,7 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import Navbar from './components/Navbar';
 import Profile from './pages/Profile';
 import Garage from './pages/Garage';
 import LapTimes from './pages/LapTimes';
@@ -24,12 +25,21 @@ function AppRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+    if (window.location.pathname !== '/') {
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <MemoryRouter>
         <div className="glow-bg"></div>
-        <AppRoutes />
-      </BrowserRouter>
+        <Navbar />
+        <div className="page-container">
+          <AppRoutes />
+        </div>
+      </MemoryRouter>
     </AuthProvider>
   );
 }

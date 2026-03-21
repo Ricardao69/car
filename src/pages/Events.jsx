@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '../components/Navbar';
 import { useEvents } from '../hooks/useEvents';
 import { useAuth } from '../contexts/AuthContext';
 import { Calendar, MapPin, ShieldAlert, Trash2, Clock, Users, Plus, CheckCircle } from 'lucide-react';
@@ -38,9 +37,7 @@ export default function Events() {
   };
 
   return (
-    <div className="page-container">
-      <Navbar />
-
+    <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem' }}>
         <div>
           <h1 className="hero-title">CENTRAL DE <span>EVENTOS</span></h1>
@@ -173,6 +170,6 @@ export default function Events() {
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }

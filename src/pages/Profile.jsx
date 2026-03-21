@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGarage } from '../hooks/useGarage';
 import { useLapTimes } from '../hooks/useLapTimes';
 import { Camera, Save, BadgeCheck, Clock, LogOut, Calendar, Trophy, Car, ShieldCheck } from 'lucide-react';
-import Navbar from '../components/Navbar';
 
 export default function Profile() {
   const { user, updateProfile, logout } = useAuth();
@@ -62,9 +61,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="page-container">
-      <Navbar />
-
+    <>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         <h1 className="hero-title">PILOT <span>PROFILE</span></h1>
         
@@ -194,6 +191,6 @@ export default function Profile() {
         </div>
       </div>
       <input type="file" accept="image/*" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImageChange} />
-    </div>
+    </>
   );
 }
