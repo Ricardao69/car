@@ -176,7 +176,9 @@ app.get('/api/posts', authMiddleware, (req, res) => {
     SELECT 
       p.*, 
       u.name as userName,
-      (SELECT GROUP_CONCAT(c.marca || ' ' || c.modelo, ' / ') FROM cars c WHERE c.userId = p.userId LIMIT 1) as mainCar
+      u.avatarUrl as userAvatar,
+      (SELECT GROUP_CONCAT(c.marca || ' ' || c.modelo, ' / ') FROM cars c WHERE c.userId = p.userId LIMIT 1) as mainCar,
+      (SELECT COUNT(*) FROM comments com WHERE com.postId = p.id) as commentCount
     FROM posts p
     JOIN users u ON p.userId = u.id
     ORDER BY p.createdAt DESC
@@ -189,15 +191,45 @@ app.get('/api/posts', authMiddleware, (req, res) => {
 
 // Create a new post
 app.post('/api/posts', authMiddleware, (req, res) => {
-  const { content } = req.body;
+  const { content, imageUrl } = req.body;
   if (!content) return res.status(400).json({ error: 'Conteúdo é obrigatório' });
 
   db.run(
-    'INSERT INTO posts (userId, content) VALUES (?, ?)',
-    [req.user.id, content],
+    'INSERT INTO posts (userId, content, imageUrl) VALUES (?, ?, ?)',
+    [req.user.id, content, imageUrl],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID, userId: req.user.id, content, createdAt: new Date() });
+      res.json({ id: this.lastID, userId: req.user.id, content, imageUrl, createdAt: new Date() });
+    }
+  );
+});
+
+// Get comments for a post
+app.get('/api/posts/:postId/comments', authMiddleware, (req, res) => {
+  const query = `
+    SELECT c.*, u.name as userName, u.avatarUrl as userAvatar
+    FROM comments c
+    JOIN users u ON c.userId = u.id
+    WHERE c.postId = ?
+    ORDER BY c.createdAt ASC
+  `;
+  db.all(query, [req.params.postId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Add a comment to a post
+app.post('/api/posts/:postId/comments', authMiddleware, (req, res) => {
+  const { content } = req.body;
+  if (!content) return res.status(400).json({ error: 'Comentário não pode ser vazio' });
+
+  db.run(
+    'INSERT INTO comments (postId, userId, content) VALUES (?, ?, ?)',
+    [req.params.postId, req.user.id, content],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID, postId: req.params.postId, userId: req.user.id, content, createdAt: new Date() });
     }
   );
 });

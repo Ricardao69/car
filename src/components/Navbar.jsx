@@ -26,7 +26,7 @@ export default function Navbar() {
             <Calendar size={16} /> EVENTOS
           </NavLink>
           <NavLink to="/feed" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <MessageSquare size={16} /> PADDOCK
+            <MessageSquare size={16} /> COMUNIDADE
           </NavLink>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>

@@ -3,7 +3,7 @@ import { Activity, Users, MapPin } from 'lucide-react';
 
 export default function LiveActivity() {
   const mockActivities = [
-    { id: 1, user: 'GTR_Master', action: 'entrou no paddock', icon: <Users size={14} />, time: 'agora' },
+    { id: 1, user: 'GTR_Master', action: 'entrou na comunidade', icon: <Users size={14} />, time: 'agora' },
     { id: 2, user: 'NitroQueen', action: 'registrou 1:39.110', icon: <Activity size={14} />, time: '2m atrás' },
     { id: 3, user: 'PistaBoy', action: 'postou na garagem', icon: <MapPin size={14} />, time: '5m atrás' },
   ];

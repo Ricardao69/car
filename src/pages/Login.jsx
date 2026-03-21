@@ -32,7 +32,7 @@ export default function Login() {
           <div style={{ color: 'var(--accent-primary)', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
             <CarFront size={48} />
           </div>
-          <h1 className="title" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Acessar Paddock</h1>
+          <h1 className="title" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Acessar Comunidade</h1>
           <p className="subtitle">Bem-vindo de volta, piloto.</p>
         </div>
 

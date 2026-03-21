@@ -90,7 +90,26 @@ function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       userId TEXT NOT NULL,
       content TEXT NOT NULL,
+      imageUrl TEXT,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(userId) REFERENCES users(id)
+    )
+  `);
+
+  // Ensure posts table has imageUrl column
+  db.run(`ALTER TABLE posts ADD COLUMN imageUrl TEXT`, (err) => {
+    // Ignore error if column already exists
+  });
+
+  // Comments Table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      postId INTEGER NOT NULL,
+      userId TEXT NOT NULL,
+      content TEXT NOT NULL,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(postId) REFERENCES posts(id),
       FOREIGN KEY(userId) REFERENCES users(id)
     )
   `);
@@ -134,48 +153,86 @@ function initDb() {
       { id: 'u4', name: 'Alpine_Enthusiast', email: 'alpine@track.com', pass: '123', fav: 'Alpine A110S' },
     ];
 
+    // Sequential seeding to avoid race conditions
     db.get("SELECT COUNT(*) as count FROM users WHERE id != '1'", (err, row) => {
-      if (row && row.count === 0) {
-        mockUsers.forEach(u => {
-          db.run('INSERT INTO users (id, name, email, password, cnhStatus) VALUES (?, ?, ?, ?, ?)', 
-            [u.id, u.name, u.email, '$2a$10$xyz', 'Piloto de Elite']);
-          
-          const carId = 'c_' + u.id;
-          db.run('INSERT INTO cars (id, userId, marca, modelo, tracao, cavalaria, peso, ano, pneu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [carId, u.id, u.fav.split(' ')[0], u.fav.split(' ').slice(1).join(' '), 'AWD', 500, 1500, 2023, 'Slick']);
+      if (err) console.error('Error counting users:', err.message);
+      
+      const insertUsers = () => {
+        return new Promise((resolve) => {
+          if (row && row.count === 0) {
+            console.log('Inserting mock users...');
+            let completed = 0;
+            mockUsers.forEach(u => {
+              db.run('INSERT INTO users (id, name, email, password, cnhStatus) VALUES (?, ?, ?, ?, ?)', 
+                [u.id, u.name, u.email, '$2a$10$xyz', 'Piloto de Elite'], (err) => {
+                  if (err) console.error(`Error inserting mock user ${u.name}:`, err.message);
+                  const carId = 'c_' + u.id;
+                  db.run('INSERT INTO cars (id, userId, marca, modelo, tracao, cavalaria, peso, ano, pneu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [carId, u.id, u.fav.split(' ')[0], u.fav.split(' ').slice(1).join(' '), 'AWD', 500, 1500, 2023, 'Slick'], () => {
+                      completed++;
+                      if (completed === mockUsers.length) resolve();
+                    });
+                });
+            });
+          } else {
+            resolve();
+          }
         });
-      }
+      };
+
+      insertUsers().then(() => {
+        // Now insert posts
+        db.get("SELECT COUNT(*) as count FROM posts", (err, row) => {
+          if (row && row.count <= 4) {
+            console.log('Inserting mock posts and comments...');
+            db.serialize(() => {
+              db.run("DELETE FROM posts");
+              db.run("DELETE FROM comments");
+              
+              const mockPosts = [
+                ['u1', 'A pista de Interlagos estava absurda hoje! Grip total na Curva do Sol.', 'https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?q=80&w=1000&auto=format&fit=crop'],
+                ['u2', 'Finalmente baixei de 1:40 em Interlagos. O 911 GT3 é uma arma!', 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1000&auto=format&fit=crop'],
+                ['u3', 'Alguém indo para o Velocitta no próximo domingo? Quero testar o novo set de pneus.', null],
+                ['u4', 'Dica: Calibrem os pneus em 28 psi para o asfalto quente hoje.', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=1000&auto=format&fit=crop'],
+                ['u1', 'Novo setup de suspensão instalado no GT-R. A diferença é brutal!', 'https://images.unsplash.com/photo-1566274360936-692e1ec40da4?q=80&w=1000&auto=format&fit=crop']
+              ];
+
+              mockPosts.forEach((p, idx) => {
+                db.run('INSERT INTO posts (userId, content, imageUrl) VALUES (?, ?, ?)', p, function(err) {
+                  if (err) {
+                    console.error('Error inserting mock post:', err.message);
+                    return;
+                  }
+                  const postId = this.lastID;
+                  if (idx === 0) {
+                    db.run('INSERT INTO comments (postId, userId, content) VALUES (?, ?, ?)', [postId, 'u2', 'Concordo! Aquela curva é mágica.']);
+                    db.run('INSERT INTO comments (postId, userId, content) VALUES (?, ?, ?)', [postId, 'u3', 'Tava lá também! Vi seu carro, tá andando muito.']);
+                  } else if (idx === 1) {
+                    db.run('INSERT INTO comments (postId, userId, content) VALUES (?, ?, ?)', [postId, 'u1', 'Tempo animal! Parabéns pelo recorde pessoal.']);
+                  }
+                });
+              });
+            });
+          }
+        });
+
+        // Now insert extra laps
+        db.get("SELECT COUNT(*) as count FROM laptimes", (err, row) => {
+          if (row && row.count <= 4) {
+             const extraLaps = [
+              ['l5', 'u4', 'Alpine_Enthusiast', 'c_u4', 'Alpine A110S', 'RWD', 300, 'Interlagos', '1', '41', '500', 101500],
+              ['l6', 'u2', 'NitroQueen', 'c_u2', 'Porsche 911 GT3', 'RWD', 510, 'Velocitta', '1', '29', '340', 89340]
+            ];
+            extraLaps.forEach(l => {
+              db.run(`INSERT OR IGNORE INTO laptimes (id, userId, userName, carId, carName, carTracao, carCavalaria, track, timeMinutes, timeSeconds, timeMillis, totalMillis) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, l);
+            });
+          }
+        });
+      });
     });
 
-    db.get("SELECT COUNT(*) as count FROM laptimes", (err, row) => {
-      if (row && row.count === 0) {
-        const mockLaps = [
-          ['l1', 'u1', 'GTR_Master', 'c_u1', 'Nissan GT-R', 'AWD', 600, 'Interlagos', '1', '38', '452', 98452],
-          ['l2', 'u2', 'NitroQueen', 'c_u2', 'Porsche 911 GT3', 'RWD', 510, 'Interlagos', '1', '39', '110', 99110],
-          ['l3', 'u3', 'PistaBoy', 'c_u3', 'Honda Civic Type R', 'FWD', 320, 'Interlagos', '1', '45', '890', 105890],
-          ['l4', 'u1', 'GTR_Master', 'c_u1', 'Nissan GT-R', 'AWD', 600, 'Velocitta', '1', '32', '200', 92200],
-        ];
-        mockLaps.forEach(l => {
-          db.run(`INSERT INTO laptimes (id, userId, userName, carId, carName, carTracao, carCavalaria, track, timeMinutes, timeSeconds, timeMillis, totalMillis) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, l);
-        });
-      }
-    });
-    
-    // Custom mock data for posts
-    db.get("SELECT COUNT(*) as count FROM posts", (err, row) => {
-      if (row && row.count <= 3) {
-        db.run(`
-          INSERT INTO posts (userId, content, createdAt) VALUES
-          ('u1', 'A pista de Interlagos estava absurda hoje! Grip total na Curva do Sol.', date('now', '-2 hours')),
-          ('u2', 'Finalmente baixei de 1:40 em Interlagos. O 911 GT3 é uma arma!', date('now', '-5 hours')),
-          ('u3', 'Alguém indo para o Velocitta no próximo domingo?', date('now', '-1 day')),
-          ('u4', 'Dica: Calibrem os pneus em 28 psi para o asfalto quente hoje.', date('now', '-3 days'))
-        `);
-      }
-    });
-
-    console.log('Database tables verified/created successfully with mock data.');
+    console.log('Database initialization scripts scheduled.');
   });
 }
 

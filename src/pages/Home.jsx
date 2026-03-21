@@ -42,7 +42,7 @@ export default function Home() {
   return (
     <div className="home-container animate-in">
       <div style={{ marginBottom: '4rem' }}>
-        <h1 className="hero-title" style={{ fontSize: '3.5rem' }}>BEM-VINDO AO <span>PADDOCK</span></h1>
+        <h1 className="hero-title" style={{ fontSize: '3.5rem' }}>BEM-VINDO À <span style={{ color: 'var(--accent-primary)' }}>COMUNIDADE</span></h1>
         <p className="subtitle">Sua central de controle para performance, eventos e comunidade car culture.</p>
       </div>
 
