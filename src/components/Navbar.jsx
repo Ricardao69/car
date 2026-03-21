@@ -16,11 +16,8 @@ export default function Navbar() {
         </NavLink>
 
         <div className="nav-links">
-          <NavLink to="/garage" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <LayoutGrid size={16} /> GARAGEM
-          </NavLink>
-          <NavLink to="/laptimes" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-            <Timer size={16} /> TELEMETRIA
+          <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <LayoutGrid size={16} /> INÍCIO
           </NavLink>
           <NavLink to="/ranking" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             <Trophy size={16} /> RANKING

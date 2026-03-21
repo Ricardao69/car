@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { MessageSquare, Send, Car, Clock } from 'lucide-react';
+import LiveActivity from '../components/LiveActivity';
 
 export default function Feed() {
   const { user } = useAuth();
@@ -147,6 +148,8 @@ export default function Feed() {
 
         {/* Sidebar Info */}
         <div style={{ position: 'sticky', top: '100px', display: 'flex', flexDirection: 'column', gap: '1.5rem', height: 'fit-content' }}>
+          <LiveActivity />
+          
           <div className="card" style={{ padding: '2rem' }}>
             <h3 className="title" style={{ fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>REGRAS BÁSICAS</h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>

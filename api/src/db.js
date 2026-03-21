@@ -120,25 +120,62 @@ function initDb() {
   db.run(`DROP TABLE IF EXISTS events;`);
   db.run(`ALTER TABLE events_new RENAME TO events;`);
 
-  // Default Events (inserting example data)
-  db.run(`
-    INSERT OR IGNORE INTO events (id, organizerId, organizerName, title, date, time, location, rules, rsvps)
-    VALUES ('1', '1', 'Admin', 'Trackday Noturno', '2024-12-15', '20:00', 'Interlagos', 'Capacete obrigatório. Proibido drift.', '["1"]')
-  `);
-  
-  // Custom mock data for posts
-  db.get("SELECT COUNT(*) as count FROM posts", (err, row) => {
-    if (row.count === 0) {
-      db.run(`
-        INSERT INTO posts (userId, content) VALUES
-        ('1', 'Ansioso para o trackday deste final de semana!'),
-        ('1', 'Alguém recomenda uma boa oficina especializada em suspensão na zona sul?'),
-        ('1', 'Instalei os pneus slick, a diferença de grip é absurda! 🔥')
-      `);
-    }
-  });
+    // Default Events (inserting example data)
+    db.run(`
+      INSERT OR IGNORE INTO events (id, organizerId, organizerName, title, date, time, location, rules, rsvps)
+      VALUES ('1', '1', 'Admin', 'Trackday Noturno', '2024-12-15', '20:00', 'Interlagos', 'Capacete obrigatório. Proibido drift.', '["1"]')
+    `);
 
-    console.log('Database tables verified/created successfully.');
+    // --- MOCK DATA FOR "LIVE" FEEL ---
+    const mockUsers = [
+      { id: 'u1', name: 'GTR_Master', email: 'gtr@track.com', pass: '123', fav: 'Nissan GT-R Nismo' },
+      { id: 'u2', name: 'NitroQueen', email: 'nitro@track.com', pass: '123', fav: 'Porsche 911 GT3' },
+      { id: 'u3', name: 'PistaBoy', email: 'pista@track.com', pass: '123', fav: 'Honda Civic Type R' },
+      { id: 'u4', name: 'Alpine_Enthusiast', email: 'alpine@track.com', pass: '123', fav: 'Alpine A110S' },
+    ];
+
+    db.get("SELECT COUNT(*) as count FROM users WHERE id != '1'", (err, row) => {
+      if (row && row.count === 0) {
+        mockUsers.forEach(u => {
+          db.run('INSERT INTO users (id, name, email, password, cnhStatus) VALUES (?, ?, ?, ?, ?)', 
+            [u.id, u.name, u.email, '$2a$10$xyz', 'Piloto de Elite']);
+          
+          const carId = 'c_' + u.id;
+          db.run('INSERT INTO cars (id, userId, marca, modelo, tracao, cavalaria, peso, ano, pneu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [carId, u.id, u.fav.split(' ')[0], u.fav.split(' ').slice(1).join(' '), 'AWD', 500, 1500, 2023, 'Slick']);
+        });
+      }
+    });
+
+    db.get("SELECT COUNT(*) as count FROM laptimes", (err, row) => {
+      if (row && row.count === 0) {
+        const mockLaps = [
+          ['l1', 'u1', 'GTR_Master', 'c_u1', 'Nissan GT-R', 'AWD', 600, 'Interlagos', '1', '38', '452', 98452],
+          ['l2', 'u2', 'NitroQueen', 'c_u2', 'Porsche 911 GT3', 'RWD', 510, 'Interlagos', '1', '39', '110', 99110],
+          ['l3', 'u3', 'PistaBoy', 'c_u3', 'Honda Civic Type R', 'FWD', 320, 'Interlagos', '1', '45', '890', 105890],
+          ['l4', 'u1', 'GTR_Master', 'c_u1', 'Nissan GT-R', 'AWD', 600, 'Velocitta', '1', '32', '200', 92200],
+        ];
+        mockLaps.forEach(l => {
+          db.run(`INSERT INTO laptimes (id, userId, userName, carId, carName, carTracao, carCavalaria, track, timeMinutes, timeSeconds, timeMillis, totalMillis) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, l);
+        });
+      }
+    });
+    
+    // Custom mock data for posts
+    db.get("SELECT COUNT(*) as count FROM posts", (err, row) => {
+      if (row && row.count <= 3) {
+        db.run(`
+          INSERT INTO posts (userId, content, createdAt) VALUES
+          ('u1', 'A pista de Interlagos estava absurda hoje! Grip total na Curva do Sol.', date('now', '-2 hours')),
+          ('u2', 'Finalmente baixei de 1:40 em Interlagos. O 911 GT3 é uma arma!', date('now', '-5 hours')),
+          ('u3', 'Alguém indo para o Velocitta no próximo domingo?', date('now', '-1 day')),
+          ('u4', 'Dica: Calibrem os pneus em 28 psi para o asfalto quente hoje.', date('now', '-3 days'))
+        `);
+      }
+    });
+
+    console.log('Database tables verified/created successfully with mock data.');
   });
 }
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLapTimes } from '../hooks/useLapTimes';
-import { Trophy, Zap, Filter, MapPin, Search } from 'lucide-react';
+import { Trophy, Zap, Filter, MapPin, Search, Timer } from 'lucide-react';
+import LapTimes from './LapTimes';
 
 const POWER_BRACKETS = [
   { name: 'Pocket Rocket', max: 120, color: '#94a3b8' },
@@ -17,6 +18,7 @@ const TRACTIONS = ['FWD', 'RWD', 'AWD'];
 export default function Ranking() {
   const { lapTimes } = useLapTimes();
   const [filterTrack, setFilterTrack] = useState('Todos');
+  const [activeTab, setActiveTab] = useState('ranking'); // 'ranking' or 'telemetry'
 
   // Dynamic list of tracks for filtering
   const tracks = ['Todos', ...new Set(lapTimes.map(l => l.track))];
@@ -35,10 +37,55 @@ export default function Ranking() {
 
   return (
     <>
-      <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
-        <h1 className="hero-title">RANKING <span>MUNDIAL</span></h1>
-        <p className="subtitle">Status de elite: Os tempos mais baixos por categoria técnica.</p>
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+        <button 
+          onClick={() => setActiveTab('ranking')}
+          style={{ 
+            background: 'transparent', 
+            border: 'none', 
+            color: activeTab === 'ranking' ? 'var(--accent-primary)' : 'var(--text-muted)',
+            fontSize: '0.9rem',
+            fontWeight: '900',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 1rem',
+            borderBottom: activeTab === 'ranking' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            transition: '0.2s',
+            marginBottom: '-1.1rem'
+          }}
+        >
+          <Trophy size={18} /> RANKING GLOBAL
+        </button>
+        <button 
+          onClick={() => setActiveTab('telemetry')}
+          style={{ 
+            background: 'transparent', 
+            border: 'none', 
+            color: activeTab === 'telemetry' ? 'var(--accent-primary)' : 'var(--text-muted)',
+            fontSize: '0.9rem',
+            fontWeight: '900',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 1rem',
+            borderBottom: activeTab === 'telemetry' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            transition: '0.2s',
+            marginBottom: '-1.1rem'
+          }}
+        >
+          <Timer size={18} /> REGISTRAR / TELEMETRIA
+        </button>
       </div>
+
+      {activeTab === 'ranking' ? (
+        <div className="animate-in">
+          <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
+            <h1 className="hero-title">RANKING <span>MUNDIAL</span></h1>
+            <p className="subtitle">Status de elite: Os tempos mais baixos por categoria técnica.</p>
+          </div>
 
       {/* Filter Bar */}
       <div className="card" style={{ marginBottom: '3rem', padding: '1rem 2rem', display: 'flex', alignItems: 'center', gap: '2rem', background: 'var(--bg-tertiary)' }}>
@@ -121,12 +168,17 @@ export default function Ranking() {
           </div>
         );
       })}
-      
       {lapTimes.length === 0 && (
-        <div className="empty-state">
+        <div className="empty-state" style={{ marginTop: '2rem' }}>
           <Trophy size={64} color="var(--text-muted)" style={{ marginBottom: '1.5rem' }} />
           <h2 className="title">Sem competidores ainda</h2>
           <p className="subtitle">Seja o primeiro a registrar um tempo para inaugurar o ranking mundial.</p>
+        </div>
+      )}
+    </div>
+) : (
+        <div className="animate-in">
+          <LapTimes />
         </div>
       )}
     </>
