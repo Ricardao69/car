@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
 import UserProfileModal from '../components/UserProfileModal';
+import ImageModal from '../components/ImageModal';
 import { MessageSquare, Send, Car, Clock, Heart, Trash2, Search } from 'lucide-react';
 import LiveActivity from '../components/LiveActivity';
 
@@ -29,6 +30,7 @@ export default function Feed() {
   const [expandedComments, setExpandedComments] = useState({});
   const [commentInputs, setCommentInputs] = useState({});
   const [profileUserId, setProfileUserId] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     fetchPosts();
@@ -296,8 +298,17 @@ export default function Feed() {
                 </div>
 
                 {post.imageUrl && (
-                  <div style={{ width: '100%', maxHeight: '400px', overflow: 'hidden', borderY: '1px solid var(--border-color)' }}>
-                    <img src={post.imageUrl} alt="Post" style={{ width: '100%', height: 'auto', objectFit: 'cover' }} />
+                  <div 
+                    onClick={() => setSelectedImage(post.imageUrl)}
+                    style={{ width: '100%', maxHeight: '400px', overflow: 'hidden', borderY: '1px solid var(--border-color)', cursor: 'pointer' }}
+                  >
+                    <img 
+                      src={post.imageUrl} 
+                      alt="Post" 
+                      style={{ width: '100%', height: 'auto', objectFit: 'cover', transition: 'transform 0.3s ease' }} 
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    />
                   </div>
                 )}
 
@@ -432,6 +443,11 @@ export default function Feed() {
       {/* User Profile Modal */}
       {profileUserId && (
         <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />
+      )}
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
       )}
     </>
   );

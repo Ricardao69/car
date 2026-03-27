@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Car, Trophy, Calendar, MapPin, Heart, Image as ImageIcon, ShieldCheck } from 'lucide-react';
+import ImageModal from './ImageModal';
 
 export default function UserProfileModal({ userId, onClose }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('posts');
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -207,7 +209,13 @@ export default function UserProfileModal({ userId, onClose }) {
                           </div>
                           <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                             {userPhotos.map(p => (
-                              <img key={`img-${p.id}`} src={p.imageUrl} alt="Foto" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
+                              <img 
+                                key={`img-${p.id}`} 
+                                src={p.imageUrl} 
+                                alt="Foto" 
+                                onClick={() => setSelectedImage(p.imageUrl)}
+                                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0, cursor: 'pointer' }} 
+                              />
                             ))}
                           </div>
                         </div>
@@ -217,7 +225,12 @@ export default function UserProfileModal({ userId, onClose }) {
                           <div key={post.id} style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                             <p style={{ fontSize: '0.85rem', marginBottom: '0.75rem', lineHeight: 1.5, color: 'var(--text-secondary)' }}>{post.content}</p>
                             {post.imageUrl && (
-                              <img src={post.imageUrl} alt="Post" style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '4px', marginBottom: '1rem' }} />
+                              <img 
+                                src={post.imageUrl} 
+                                alt="Post" 
+                                onClick={() => setSelectedImage(post.imageUrl)}
+                                style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '4px', marginBottom: '1rem', cursor: 'pointer' }} 
+                              />
                             )}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
                               <span>{new Date(post.createdAt).toLocaleDateString()}</span>
@@ -274,6 +287,11 @@ export default function UserProfileModal({ userId, onClose }) {
           </div>
         )}
       </div>
+      
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
+      )}
     </div>
   );
 }
