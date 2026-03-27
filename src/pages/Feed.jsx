@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { MessageSquare, Send, Car, Clock } from 'lucide-react';
+import { useToast } from '../components/Toast';
+import UserProfileModal from '../components/UserProfileModal';
+import { MessageSquare, Send, Car, Clock, Heart, Trash2, Search } from 'lucide-react';
 import LiveActivity from '../components/LiveActivity';
 
 const postAvatarStyle = (name) => {
@@ -18,23 +20,26 @@ const postAvatarStyle = (name) => {
 
 export default function Feed() {
   const { user } = useAuth();
+  const toast = useToast();
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
   const [loading, setLoading] = useState(true);
   const [imageUrl, setImageUrl] = useState('');
-  const [expandedComments, setExpandedComments] = useState({}); // { postId: comments[] }
-  const [commentInputs, setCommentInputs] = useState({}); // { postId: text }
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedComments, setExpandedComments] = useState({});
+  const [commentInputs, setCommentInputs] = useState({});
+  const [profileUserId, setProfileUserId] = useState(null);
 
   useEffect(() => {
     fetchPosts();
-    // Auto-refresh feed every 30 seconds
     const interval = setInterval(fetchPosts, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (search = '') => {
     try {
-      const response = await fetch('http://localhost:3000/api/posts', {
+      const searchParam = search ? `?search=${encodeURIComponent(search)}` : '';
+      const response = await fetch(`http://localhost:3000/api/posts${searchParam}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -46,7 +51,12 @@ export default function Feed() {
     }
   };
 
-    const fetchComments = async (postId) => {
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchPosts(searchTerm);
+  };
+
+  const fetchComments = async (postId) => {
     try {
       const response = await fetch(`http://localhost:3000/api/posts/${postId}/comments`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -71,12 +81,17 @@ export default function Feed() {
         },
         body: JSON.stringify({ content })
       });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Error from server');
+      }
       setCommentInputs(prev => ({ ...prev, [postId]: '' }));
       fetchComments(postId);
-      // Refresh posts to update comment count
-      fetchPosts();
+      fetchPosts(searchTerm);
+      toast.success('Comentário publicado!');
     } catch (error) {
       console.error('Error adding comment:', error);
+      toast.error('Erro ao comentar.');
     }
   };
 
@@ -93,11 +108,48 @@ export default function Feed() {
         },
         body: JSON.stringify({ content: newPost, imageUrl })
       });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Error from server');
+      }
       setNewPost('');
       setImageUrl('');
-      fetchPosts();
+      fetchPosts(searchTerm);
+      toast.success('Post publicado com sucesso!');
     } catch (error) {
       console.error('Error creating post:', error);
+      toast.error('Erro ao publicar post.');
+    }
+  };
+
+  const handleLike = async (postId) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, likeCount: data.likeCount, likedByMe: data.liked ? 1 : 0 } : p
+      ));
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.ok) {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+        toast.success('Post removido.');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast.error('Erro ao deletar post.');
     }
   };
 
@@ -120,11 +172,29 @@ export default function Feed() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 800px) 1fr', gap: '3rem', margin: '0 auto', maxWidth: '1200px' }}>
+      <div className="feed-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 800px) 1fr', gap: '3rem', margin: '0 auto', maxWidth: '1200px' }}>
         
         {/* Feed List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                className="input"
+                style={{ paddingLeft: '2.5rem', fontSize: '0.85rem' }}
+                placeholder="Buscar posts na comunidade..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="btn-primary" style={{ padding: '0.75rem 1.25rem', fontSize: '0.75rem' }}>
+              <Search size={16} /> BUSCAR
+            </button>
+          </form>
+
           {/* Post Form */}
           <div className="card animate-in" style={{ padding: '1.5rem', borderTop: '4px solid var(--accent-primary)', marginBottom: '1rem' }}>
             <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
@@ -181,12 +251,21 @@ export default function Feed() {
                         width: '40px', height: '40px', borderRadius: '50%', 
                         background: postAvatarStyle(post.userName), display: 'flex', 
                         alignItems: 'center', justifyContent: 'center',
-                        fontWeight: '800', color: '#fff'
-                      }}>
+                        fontWeight: '800', color: '#fff', cursor: 'pointer'
+                      }}
+                        onClick={() => setProfileUserId(post.userId)}
+                      >
                         {post.userName?.[0].toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: '800', color: '#fff', fontSize: '1rem' }}>{post.userName}</div>
+                        <div 
+                          style={{ fontWeight: '800', color: '#fff', fontSize: '1rem', cursor: 'pointer', transition: '0.2s' }}
+                          onClick={() => setProfileUserId(post.userId)}
+                          onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-primary)'}
+                          onMouseLeave={e => e.currentTarget.style.color = '#fff'}
+                        >
+                          {post.userName}
+                        </div>
                         {post.mainCar && (
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: '700' }}>
                             <Car size={12} color="var(--accent-primary)"/> {post.mainCar}
@@ -194,8 +273,21 @@ export default function Feed() {
                         )}
                       </div>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: '700' }}>
-                      <Clock size={12} /> {timeAgo(post.createdAt)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: '700' }}>
+                        <Clock size={12} /> {timeAgo(post.createdAt)}
+                      </div>
+                      {post.userId === user?.id && (
+                        <button
+                          onClick={() => handleDeletePost(post.id)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.5, transition: '0.2s', padding: '4px' }}
+                          onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--danger)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                          title="Deletar post"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div style={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '1rem' }}>
@@ -210,6 +302,27 @@ export default function Feed() {
                 )}
 
                 <div style={{ padding: '0.5rem 1.5rem', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                  {/* Like Button */}
+                  <button 
+                    onClick={() => handleLike(post.id)}
+                    style={{ 
+                      background: 'none', border: 'none', 
+                      color: post.likedByMe ? 'var(--accent-primary)' : 'var(--text-secondary)', 
+                      fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0',
+                      transition: '0.2s'
+                    }}
+                  >
+                    <Heart 
+                      size={16} 
+                      fill={post.likedByMe ? 'var(--accent-primary)' : 'none'}
+                      color={post.likedByMe ? 'var(--accent-primary)' : 'inherit'}
+                      style={{ transition: '0.2s' }}
+                    />
+                    {post.likeCount || 0} {post.likeCount === 1 ? 'LIKE' : 'LIKES'}
+                  </button>
+
+                  {/* Comments Button */}
                   <button 
                     onClick={() => {
                       if (expandedComments[post.id]) {
@@ -243,19 +356,30 @@ export default function Feed() {
                             width: '24px', height: '24px', borderRadius: '50%', 
                             background: postAvatarStyle(comment.userName), display: 'flex', 
                             alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.6rem', fontWeight: '900', color: '#fff', flexShrink: 0
-                          }}>
+                            fontSize: '0.6rem', fontWeight: '900', color: '#fff', flexShrink: 0,
+                            cursor: 'pointer'
+                          }}
+                            onClick={() => setProfileUserId(comment.userId)}
+                          >
                             {comment.userName?.[0].toUpperCase()}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#fff' }}>{comment.userName}</span>
+                              <span 
+                                style={{ fontSize: '0.8rem', fontWeight: '800', color: '#fff', cursor: 'pointer' }}
+                                onClick={() => setProfileUserId(comment.userId)}
+                              >
+                                {comment.userName}
+                              </span>
                               <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{timeAgo(comment.createdAt)}</span>
                             </div>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{comment.content}</p>
                           </div>
                         </div>
                       ))}
+                      {expandedComments[post.id].length === 0 && (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Nenhum comentário ainda. Seja o primeiro!</p>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -304,6 +428,11 @@ export default function Feed() {
         </div>
 
       </div>
+
+      {/* User Profile Modal */}
+      {profileUserId && (
+        <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />
+      )}
     </>
   );
 }

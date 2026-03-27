@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './components/Toast';
 import Navbar from './components/Navbar';
 import SpeedLines from './components/SpeedLines';
 import Profile from './pages/Profile';
@@ -33,15 +34,18 @@ function App() {
 
   return (
     <AuthProvider>
-      <MemoryRouter>
-        <SpeedLines />
-        <Navbar />
-        <div className="page-container">
-          <AppRoutes />
-        </div>
-      </MemoryRouter>
+      <ToastProvider>
+        <MemoryRouter>
+          <SpeedLines />
+          <Navbar />
+          <div className="page-container">
+            <AppRoutes />
+          </div>
+        </MemoryRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }
 
 export default App;
+

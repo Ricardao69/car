@@ -172,18 +172,25 @@ app.delete('/api/laps/:id', authMiddleware, (req, res) => {
 
 // Get all posts for the community feed with user info and primary car
 app.get('/api/posts', authMiddleware, (req, res) => {
+  const search = req.query.search || '';
+  const searchClause = search ? `AND p.content LIKE '%' || ? || '%'` : '';
+  const params = search ? [req.user.id, search] : [req.user.id];
+
   const query = `
     SELECT 
       p.*, 
       u.name as userName,
       u.avatarUrl as userAvatar,
       (SELECT GROUP_CONCAT(c.marca || ' ' || c.modelo, ' / ') FROM cars c WHERE c.userId = p.userId LIMIT 1) as mainCar,
-      (SELECT COUNT(*) FROM comments com WHERE com.postId = p.id) as commentCount
+      (SELECT COUNT(*) FROM comments com WHERE com.postId = p.id) as commentCount,
+      (SELECT COUNT(*) FROM likes lk WHERE lk.postId = p.id) as likeCount,
+      (SELECT COUNT(*) FROM likes lk WHERE lk.postId = p.id AND lk.userId = ?) as likedByMe
     FROM posts p
     JOIN users u ON p.userId = u.id
+    WHERE 1=1 ${searchClause}
     ORDER BY p.createdAt DESC
   `;
-  db.all(query, [], (err, rows) => {
+  db.all(query, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -202,6 +209,44 @@ app.post('/api/posts', authMiddleware, (req, res) => {
       res.json({ id: this.lastID, userId: req.user.id, content, imageUrl, createdAt: new Date() });
     }
   );
+});
+
+// Delete a post (only author)
+app.delete('/api/posts/:id', authMiddleware, (req, res) => {
+  db.run('DELETE FROM likes WHERE postId = ?', [req.params.id]);
+  db.run('DELETE FROM comments WHERE postId = ?', [req.params.id]);
+  db.run('DELETE FROM posts WHERE id = ? AND userId = ?', [req.params.id, req.user.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(403).json({ error: 'Sem permissão' });
+    res.json({ message: 'Post deletado.' });
+  });
+});
+
+// Toggle like on a post
+app.post('/api/posts/:id/like', authMiddleware, (req, res) => {
+  const postId = req.params.id;
+  const userId = req.user.id;
+
+  db.get('SELECT id FROM likes WHERE postId = ? AND userId = ?', [postId, userId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (row) {
+      // Unlike
+      db.run('DELETE FROM likes WHERE postId = ? AND userId = ?', [postId, userId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get('SELECT COUNT(*) as count FROM likes WHERE postId = ?', [postId], (err, result) => {
+          res.json({ liked: false, likeCount: result.count });
+        });
+      });
+    } else {
+      // Like
+      db.run('INSERT INTO likes (postId, userId) VALUES (?, ?)', [postId, userId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get('SELECT COUNT(*) as count FROM likes WHERE postId = ?', [postId], (err, result) => {
+          res.json({ liked: true, likeCount: result.count });
+        });
+      });
+    }
+  });
 });
 
 // Get comments for a post
@@ -238,7 +283,12 @@ app.post('/api/posts/:postId/comments', authMiddleware, (req, res) => {
 app.get('/api/events', authMiddleware, (req, res) => {
   db.all('SELECT * FROM events ORDER BY date ASC, time ASC', [], (err, events) => {
     if (err) return res.status(500).json({ error: 'Erro ao buscar eventos.' });
-    res.json(events);
+    // Parse rsvps JSON for each event
+    const parsed = events.map(e => ({
+      ...e,
+      rsvps: (() => { try { return JSON.parse(e.rsvps || '[]'); } catch { return []; } })()
+    }));
+    res.json(parsed);
   });
 });
 
@@ -247,12 +297,56 @@ app.post('/api/events', authMiddleware, (req, res) => {
   const id = Date.now().toString();
 
   db.run(
-    `INSERT INTO events (id, organizerId, organizerName, title, date, time, location, rules) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO events (id, organizerId, organizerName, title, date, time, location, rules, rsvps) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, '[]')`,
     [id, req.user.id, req.user.name, title, date, time, location, rules],
     function (err) {
       if (err) return res.status(500).json({ error: 'Erro ao criar evento.' });
-      res.status(201).json({ id, organizerId: req.user.id, organizerName: req.user.name, title, date, time, location, rules, createdAt: new Date().toISOString() });
+      res.status(201).json({ id, organizerId: req.user.id, organizerName: req.user.name, title, date, time, location, rules, rsvps: [], createdAt: new Date().toISOString() });
+    }
+  );
+});
+
+// Toggle RSVP for an event
+app.post('/api/events/:id/rsvp', authMiddleware, (req, res) => {
+  const eventId = req.params.id;
+  const userId = req.user.id;
+  const userName = req.user.name;
+
+  db.get('SELECT rsvps FROM events WHERE id = ?', [eventId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Evento não encontrado' });
+
+    let rsvps = [];
+    try { rsvps = JSON.parse(row.rsvps || '[]'); } catch { rsvps = []; }
+
+    const existingIdx = rsvps.findIndex(r => r.userId === userId);
+    let confirmed;
+    if (existingIdx >= 0) {
+      rsvps.splice(existingIdx, 1);
+      confirmed = false;
+    } else {
+      rsvps.push({ userId, userName });
+      confirmed = true;
+    }
+
+    db.run('UPDATE events SET rsvps = ? WHERE id = ?', [JSON.stringify(rsvps), eventId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ confirmed, rsvps });
+    });
+  });
+});
+
+// Edit event (only organizer)
+app.put('/api/events/:id', authMiddleware, (req, res) => {
+  const { title, date, time, location, rules } = req.body;
+  db.run(
+    'UPDATE events SET title = ?, date = ?, time = ?, location = ?, rules = ? WHERE id = ? AND organizerId = ?',
+    [title, date, time, location, rules, req.params.id, req.user.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: 'Erro ao editar evento.' });
+      if (this.changes === 0) return res.status(403).json({ error: 'Sem permissão' });
+      res.json({ message: 'Evento atualizado.' });
     }
   );
 });
@@ -275,6 +369,67 @@ app.put('/api/users/profile', authMiddleware, (req, res) => {
       res.json({ message: 'Perfil atualizado.' });
     }
   );
+});
+
+// --- Public User Profile ---
+app.get('/api/users/:id/profile', authMiddleware, (req, res) => {
+  const userId = req.params.id;
+  db.get('SELECT id, name, avatarUrl, cnhStatus, createdAt FROM users WHERE id = ?', [userId], (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+    db.all('SELECT marca, modelo, tracao, cavalaria, ano FROM cars WHERE userId = ?', [userId], (err, cars) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.all('SELECT track, carName, timeMinutes, timeSeconds, timeMillis, totalMillis FROM laptimes WHERE userId = ? ORDER BY totalMillis ASC LIMIT 5', [userId], (err, laps) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        db.all('SELECT id, title, date, location FROM events WHERE organizerId = ? ORDER BY date DESC', [userId], (err, organizedEvents) => {
+          if (err) return res.status(500).json({ error: err.message });
+
+          db.all('SELECT id, content, imageUrl, createdAt, (SELECT COUNT(*) FROM likes l WHERE l.postId = posts.id) as likeCount FROM posts WHERE userId = ? ORDER BY createdAt DESC', [userId], (err, posts) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            res.json({ 
+              ...user, 
+              cars, 
+              bestLaps: laps,
+              organizedEvents,
+              posts
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+// --- Real Stats Endpoint ---
+app.get('/api/stats', authMiddleware, (req, res) => {
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  
+  db.get('SELECT COUNT(*) as count FROM users', (err, users) => {
+    if (err) return res.status(500).json({ error: err.message });
+    db.get('SELECT COUNT(*) as count FROM cars', (err, cars) => {
+      if (err) return res.status(500).json({ error: err.message });
+      db.get('SELECT COUNT(*) as count FROM laptimes WHERE date >= ?', [oneWeekAgo], (err, weekRecords) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get('SELECT COUNT(*) as count FROM posts', (err, posts) => {
+          if (err) return res.status(500).json({ error: err.message });
+          db.get('SELECT COUNT(*) as count FROM events', (err, events) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({
+              pilotos: users.count,
+              maquinas: cars.count,
+              recordesSemana: weekRecords.count,
+              posts: posts.count,
+              eventos: events.count
+            });
+          });
+        });
+      });
+    });
+  });
 });
 
 app.listen(PORT, () => {

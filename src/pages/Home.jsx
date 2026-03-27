@@ -1,11 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEvents } from '../hooks/useEvents';
 import { useLapTimes } from '../hooks/useLapTimes';
-import { Trophy, Calendar, Users, Car, Timer, Zap, MapPin, ArrowRight, Instagram } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Trophy, Calendar, Users, Car, Timer, Zap, MapPin, ArrowRight, Instagram, Heart } from 'lucide-react';
 
 export default function Home() {
   const { events } = useEvents();
   const { lapTimes } = useLapTimes();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ pilotos: 0, maquinas: 0, recordesSemana: 0 });
+  const [feedPosts, setFeedPosts] = useState([]);
+
+  // Fetch real stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/stats', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data);
+        }
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  // Fetch real feed posts
+  useEffect(() => {
+    const fetchFeed = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/posts', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setFeedPosts(data.filter(p => p.imageUrl).slice(0, 6));
+        }
+      } catch (err) {
+        console.error('Error fetching feed:', err);
+      }
+    };
+    fetchFeed();
+  }, []);
 
   // Sort lap times for ranking
   const topRankings = [...lapTimes]
@@ -29,16 +69,6 @@ export default function Home() {
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 3);
 
-  // Dummy data for Instagram-style feed
-  const feedPhotos = [
-    { id: 1, user: 'Ricardo', url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70', likes: 124 },
-    { id: 2, user: 'Gabriel', url: 'https://images.unsplash.com/photo-1542362567-b055002b91f4', likes: 89 },
-    { id: 3, user: 'Ana', url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7', likes: 210 },
-    { id: 4, user: 'Lucas', url: 'https://images.unsplash.com/photo-1555215695-3004980ad54e', likes: 56 },
-    { id: 5, user: 'Carlos', url: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8', likes: 302 },
-    { id: 6, user: 'Maria', url: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d', likes: 145 },
-  ];
-
   return (
     <div className="home-container animate-in">
       <div style={{ marginBottom: '4rem' }}>
@@ -46,27 +76,27 @@ export default function Home() {
         <p className="subtitle">Sua central de controle para performance, eventos e comunidade car culture.</p>
       </div>
 
-      {/* Grid de Estatísticas Rápidas */}
+      {/* Grid de Estatísticas Reais */}
       <div className="section-grid" style={{ marginBottom: '4rem', gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="card stats-card">
           <div className="icon-wrapper"><Users size={24} /></div>
           <div className="stats-info">
             <span className="label">PILOTOS</span>
-            <span className="value">1.258</span>
+            <span className="value">{stats.pilotos.toLocaleString()}</span>
           </div>
         </div>
         <div className="card stats-card">
           <div className="icon-wrapper"><Car size={24} /></div>
           <div className="stats-info">
             <span className="label">MÁQUINAS</span>
-            <span className="value">3.402</span>
+            <span className="value">{stats.maquinas.toLocaleString()}</span>
           </div>
         </div>
         <div className="card stats-card highlight">
           <div className="icon-wrapper"><Trophy size={24} /></div>
           <div className="stats-info">
             <span className="label">RECORDES SEMANA</span>
-            <span className="value">42</span>
+            <span className="value">{stats.recordesSemana}</span>
           </div>
         </div>
       </div>
@@ -80,7 +110,7 @@ export default function Home() {
               <h2 className="title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <Trophy color="var(--accent-primary)" size={24} /> TOP RANKING GLOBAL
               </h2>
-              <button className="link-btn">VER TUDO <ArrowRight size={16} /></button>
+              <button className="link-btn" onClick={() => navigate('/ranking')}>VER TUDO <ArrowRight size={16} /></button>
             </div>
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
               <table className="ranking-table">
@@ -113,23 +143,31 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Social Feed - Instagram Style */}
+          {/* Social Feed - Real Posts with Images */}
           <section>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
               <h2 className="title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <Instagram color="var(--accent-primary)" size={24} /> FEED DA COMUNIDADE
               </h2>
+              <button className="link-btn" onClick={() => navigate('/feed')}>VER TUDO <ArrowRight size={16} /></button>
             </div>
             <div className="photo-grid">
-              {feedPhotos.map(photo => (
-                <div key={photo.id} className="photo-item">
-                  <img src={photo.url} alt={`Post de ${photo.user}`} />
-                  <div className="photo-info">
-                    <span className="user-tag">@{photo.user.toLowerCase()}</span>
-                    <span className="likes"><Zap size={12} fill="var(--accent-primary)" /> {photo.likes}</span>
+              {feedPosts.length > 0 ? (
+                feedPosts.map(post => (
+                  <div key={post.id} className="photo-item" onClick={() => navigate('/feed')}>
+                    <img src={post.imageUrl} alt={`Post de ${post.userName}`} />
+                    <div className="photo-info">
+                      <span className="user-tag">@{post.userName?.toLowerCase()}</span>
+                      <span className="likes"><Heart size={12} fill="var(--accent-primary)" /> {post.likeCount || 0}</span>
+                    </div>
                   </div>
+                ))
+              ) : (
+                // Fallback if no posts with images
+                <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  Nenhuma foto na comunidade ainda. <span style={{ cursor: 'pointer', color: 'var(--accent-primary)' }} onClick={() => navigate('/feed')}>Poste a primeira!</span>
                 </div>
-              ))}
+              )}
             </div>
           </section>
         </div>
@@ -160,7 +198,7 @@ export default function Home() {
             <h3 className="title" style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>PRÓXIMOS ENCONTROS</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {upcomingEvents.map(event => (
-                <div key={event.id} className="card event-status-card">
+                <div key={event.id} className="card event-status-card" onClick={() => navigate('/events')} style={{ cursor: 'pointer' }}>
                   <div className="event-date">
                     <span className="day">{new Date(event.date).getDate()}</span>
                     <span className="month">{new Date(event.date).toLocaleString('default', { month: 'short' }).toUpperCase()}</span>

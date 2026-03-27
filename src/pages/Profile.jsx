@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useGarage } from '../hooks/useGarage';
 import { useLapTimes } from '../hooks/useLapTimes';
+import { useToast } from '../components/Toast';
 import { Camera, Save, BadgeCheck, Clock, LogOut, Calendar, Trophy, Car, ShieldCheck, LayoutGrid, User as UserIcon } from 'lucide-react';
 import Garage from './Garage';
 
 export default function Profile() {
   const { user, updateProfile, logout } = useAuth();
+  const toast = useToast();
   const { cars } = useGarage();
   const { lapTimes } = useLapTimes();
   const fileInputRef = useRef(null);
@@ -50,6 +52,7 @@ export default function Profile() {
         avatarUrl: avatarPreview
       });
       setNotification('Perfil atualizado com sucesso!');
+      toast.success('Perfil atualizado com sucesso!');
     } catch (err) {
       setNotification('Erro ao salvar perfil.');
     } finally {
@@ -112,7 +115,7 @@ export default function Profile() {
           <div className="animate-in">
             <h1 className="hero-title">PILOT <span>PROFILE</span></h1>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '2rem' }}>
+            <div className="profile-layout" style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '2rem' }}>
               
               {/* Driver License Card Style */}
               <div className="card animate-in" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--accent-primary)', boxShadow: '0 0 30px rgba(243, 18, 96, 0.1)' }}>

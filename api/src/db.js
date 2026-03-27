@@ -114,6 +114,19 @@ function initDb() {
     )
   `);
 
+  // Likes Table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      postId INTEGER NOT NULL,
+      userId TEXT NOT NULL,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(postId) REFERENCES posts(id),
+      FOREIGN KEY(userId) REFERENCES users(id),
+      UNIQUE(postId, userId)
+    )
+  `);
+
   // Default Events (with rsvps column added)
   db.run(`
     CREATE TABLE IF NOT EXISTS events_new (

@@ -56,5 +56,43 @@ export function useEvents() {
     }
   };
 
-  return { events, addEvent, removeEvent };
+  const toggleRsvp = async (eventId) => {
+    try {
+      const res = await fetch(`${API_URL}/events/${eventId}/rsvp`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(prev => prev.map(e =>
+          e.id === eventId ? { ...e, rsvps: data.rsvps } : e
+        ));
+        return data;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateEvent = async (id, eventData) => {
+    try {
+      const res = await fetch(`${API_URL}/events/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(eventData)
+      });
+      if (res.ok) {
+        setEvents(prev => prev.map(e =>
+          e.id === id ? { ...e, ...eventData } : e
+        ));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return { events, addEvent, removeEvent, toggleRsvp, updateEvent };
 }
